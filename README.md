@@ -131,7 +131,7 @@ Basirah/
 ### 1. Clone & Setup
 
 ```bash
-git clone https://github.com/yourusername/Basirah.git
+git clone https://github.com/sasfar/Basirah.git
 cd Basirah
 
 # Create data directories
@@ -607,7 +607,7 @@ If you use Basirah in your research, please cite:
   title={Basirah: Islamic Knowledge Retrieval-Augmented Generation System},
   author={Your Name},
   year={2026},
-  url={https://github.com/yourusername/Basirah}
+  url={https://github.com/sasfar/Basirah}
 }
 ```
 
@@ -623,7 +623,7 @@ If you use Basirah in your research, please cite:
 For questions, issues, or collaboration:
 
 - Email: syed@saasglobal.ca
-- GitHub Issues: [github.com/yourusername/Basirah/issues](https://github.com/yourusername/Basirah/issues)
+- GitHub Issues: [github.com/sasfar/Basirah/issues](https://github.com/sasfar/Basirah/issues)
 
 ---
 

@@ -8,7 +8,7 @@ Thank you for your interest in contributing to Basirah! We welcome contributions
 
 If you find a bug or have a feature request:
 
-1. Check if the issue already exists in [GitHub Issues](https://github.com/yourusername/Basirah/issues)
+1. Check if the issue already exists in [GitHub Issues](https://github.com/sasfar/Basirah/issues)
 2. If not, create a new issue with:
    - Clear title and description
    - Steps to reproduce (for bugs)
@@ -20,7 +20,7 @@ If you find a bug or have a feature request:
 
 1. **Fork the repository**
    ```bash
-   git clone https://github.com/yourusername/Basirah.git
+   git clone https://github.com/sasfar/Basirah.git
    cd Basirah
    git checkout -b feature/your-feature-name
    ```
@@ -58,7 +58,7 @@ If you find a bug or have a feature request:
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/Basirah.git
+git clone https://github.com/sasfar/Basirah.git
 cd Basirah
 
 # Start infrastructure
@@ -189,7 +189,7 @@ If you want to add new Islamic sources:
 
 ## Questions?
 
-- Open a [GitHub Discussion](https://github.com/yourusername/Basirah/discussions)
+- Open a [GitHub Discussion](https://github.com/sasfar/Basirah/discussions)
 - Email: syed@saasglobal.ca
 
 Thank you for contributing to Basirah! 🌙
