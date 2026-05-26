@@ -1,0 +1,151 @@
+version: "3.9"
+
+services:
+
+  basirah-postgres:
+    image: postgres:16
+    container_name: basirah-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-basirah}
+      POSTGRES_USER: ${POSTGRES_USER:-basirah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - /home/syeddgx/Projects/Basirah/data/postgres:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    ports:
+      - "127.0.0.1:5433:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-basirah}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  basirah-qdrant:
+    image: qdrant/qdrant:v1.9.2
+    container_name: basirah-qdrant
+    restart: unless-stopped
+    volumes:
+      - /home/syeddgx/Projects/Basirah/data/qdrant:/qdrant/storage
+    ports:
+      - "127.0.0.1:6335:6333"
+      - "127.0.0.1:6336:6334"
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # basirah-vllm: Running natively on host due to ARM64 architecture
+  # Start with: ~/Projects/Basirah/infra/start_vllm.sh
+  # Accessible at: http://localhost:8000
+
+  basirah-api:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    container_name: basirah-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-basirah}:${POSTGRES_PASSWORD}@basirah-postgres:5432/${POSTGRES_DB:-basirah}
+      QDRANT_URL: http://basirah-qdrant:6333
+      VLLM_URL: http://host.docker.internal:8000
+      RERANK_MODEL_PATH: /models/rerank
+      EMBED_MODEL_PATH: /models/embed
+      COLLECTION_NAME: basirah_corpus
+      LOG_LEVEL: info
+    volumes:
+      - /home/syeddgx/Projects/Basirah/data/models/rerank:/models/rerank:ro
+      - /home/syeddgx/Projects/Basirah/data/models/embed:/models/embed:ro
+      - /home/syeddgx/Projects/Basirah/data/logs:/app/logs
+    ports:
+      - "127.0.0.1:8081:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    depends_on:
+      - basirah-postgres
+      - basirah-qdrant
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  basirah-web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+    container_name: basirah-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:80/api
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      basirah-api:
+        condition: service_healthy
+
+  basirah-nginx:
+    image: nginx:1.26-alpine
+    container_name: basirah-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "0.0.0.0:80:80"
+    depends_on:
+      - basirah-web
+      - basirah-api
+
+  basirah-ingest:
+    build:
+      context: ../../services/ingest
+      dockerfile: Dockerfile
+    container_name: basirah-ingest
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-basirah}:${POSTGRES_PASSWORD}@basirah-postgres:5432/${POSTGRES_DB:-basirah}
+    volumes:
+      - /home/syeddgx/Projects/Basirah/data/corpus:/data/corpus:ro
+    depends_on:
+      basirah-postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+
+  basirah-embed:
+    build:
+      context: ../../services/embed
+      dockerfile: Dockerfile
+    container_name: basirah-embed
+    runtime: nvidia
+    environment:
+      NVIDIA_VISIBLE_DEVICES: "0"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-basirah}:${POSTGRES_PASSWORD}@basirah-postgres:5432/${POSTGRES_DB:-basirah}
+      QDRANT_URL: http://basirah-qdrant:6333
+      MODEL_PATH: /model
+      COLLECTION_NAME: ${COLLECTION_NAME:-basirah_corpus}
+    volumes:
+      - /home/syeddgx/Projects/Basirah/data/models/embed:/model:ro
+    depends_on:
+      basirah-postgres:
+        condition: service_healthy
+      basirah-qdrant:
+        condition: service_healthy
+    profiles:
+      - tools
+
+networks:
+  default:
+    name: basirah-net
