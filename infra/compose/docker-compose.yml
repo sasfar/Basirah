@@ -67,7 +67,7 @@ services:
       - /home/syeddgx/Projects/Basirah/data/models/embed:/models/embed:ro
       - /home/syeddgx/Projects/Basirah/data/logs:/app/logs
     ports:
-      - "127.0.0.1:8081:8080"
+      - "0.0.0.0:8081:8080"
     deploy:
       resources:
         limits:
@@ -90,12 +90,11 @@ services:
     container_name: basirah-web
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:80/api
+      NEXT_PUBLIC_API_URL: http://basirah-api:8080
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
-      basirah-api:
-        condition: service_healthy
+      - basirah-api
 
   basirah-nginx:
     image: nginx:1.26-alpine

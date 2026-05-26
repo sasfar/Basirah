@@ -1,0 +1,33 @@
+[Unit]
+Description=Basirah - Islamic Knowledge RAG System
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/syeddgx/Projects/Basirah/infra/compose
+User=syeddgx
+Group=syeddgx
+
+# Start llama.cpp LLM server
+ExecStartPre=/bin/bash -c 'pkill -f "llama_cpp.server" || true'
+ExecStartPre=/bin/sleep 2
+ExecStartPre=/bin/bash /home/syeddgx/Projects/Basirah/infra/start_llama.sh &
+
+# Wait for LLM to be ready
+ExecStartPre=/bin/sleep 10
+
+# Start Docker services
+ExecStart=/usr/bin/docker compose up -d basirah-postgres basirah-qdrant basirah-api basirah-web basirah-nginx
+
+# Stop services
+ExecStop=/usr/bin/docker compose down
+ExecStopPost=/bin/bash -c 'pkill -f "llama_cpp.server" || true'
+
+# Restart configuration
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
